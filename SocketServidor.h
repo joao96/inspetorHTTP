@@ -15,8 +15,13 @@ public:
 
     void aceita (SocketServidor&);
 
+    SocketServidor (){};
+
+    virtual ~SocketServidor();
+
+    int servidor_socket;
+
 private:
     struct servidor;
     socklen_t addr_len;
-
-}
+};

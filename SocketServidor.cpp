@@ -1,4 +1,5 @@
-#include "servidor.h"
+#include "SocketServidor.h"
+#include "SocketException.h"
 
 SocketServidor::SocketServidor(int porta)
 {
@@ -37,4 +38,8 @@ SocketServidor::aceita(SocketServidor& socket){
        return EXIT_FAILURE;
    }
 
+}
+
+SocketServidor::~SocketServidor()
+{
 }

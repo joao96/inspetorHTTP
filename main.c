@@ -36,13 +36,7 @@ int main(){
     bind_socket(actual_socket, servidor, addr_len);
 
     do {
-        //listen_socket(actual_socket);
-
-        if(listen(actual_socket, 3) == -1) {
-            printf("Escutou errado\n");
-            exit(-1);
-        }
-        printf("Porta: %d\n", porta);
+        listen_socket(actual_socket);
 
         accept_socket(cliente, actual_socket, &new_socket);
 

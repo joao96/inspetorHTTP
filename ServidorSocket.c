@@ -64,7 +64,7 @@ int accept_socket(struct sockaddr_in cliente, int actual_socket, int *new_socket
         printf("Erro ao aceitar o cliente.\n");
         exit (-1);
     }
-    printf("Aceitou\n");
+    printf("Aceitou.\n");
     return 1;
 }
 

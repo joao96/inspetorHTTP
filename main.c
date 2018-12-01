@@ -28,8 +28,8 @@ int main(){
     struct sockaddr_in cliente;
     char buf[] = "Hello World";
     unsigned int addr_len;
-    socket_create(&actual_socket, servidor);
-    config_socket(actual_socket, &int_pointer);
+    socket_create(&actual_socket, &servidor);
+    //config_socket(actual_socket, &int_pointer);
 
     addr_len = sizeof(struct sockaddr_in);
 

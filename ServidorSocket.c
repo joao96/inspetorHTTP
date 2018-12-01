@@ -9,7 +9,7 @@
 #include <netdb.h>
 
 
-int socket_create(int *, struct sockaddr_in);
+int socket_create(int *, struct sockaddr_in *);
 int config_socket(int, int *);
 int bind_socket(int , struct sockaddr_in, socklen_t);
 int listen_socket(int);
@@ -23,14 +23,14 @@ void send_socket();
 // tamanho do buffer
 #define BUFFER_LENGTH 4096
 
-int socket_create(int *actual_socket, struct sockaddr_in servidor){
+int socket_create(int *actual_socket, struct sockaddr_in *servidor){
     if((*actual_socket = socket(AF_INET, SOCK_STREAM, 0))==-1){
         printf("Nao foi possivel criar o socket do servidor\n");
         exit(-1);
     }
     printf("Socket criado com sucesso,%d\n", *actual_socket);
-    servidor.sin_family = AF_INET;
-    servidor.sin_port = htons(porta);
+    servidor->sin_family = AF_INET;
+    servidor->sin_port = htons(porta);
     return 1;
 }
 

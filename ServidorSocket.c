@@ -86,10 +86,3 @@ void recv_socket(char *buf, int new_socket){
     }
 
 }
-
-/*
-void close(int cliente_socket, int socket){
-    close(cliente_socket);
-    close(socket);
-}
-*/

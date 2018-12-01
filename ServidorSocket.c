@@ -64,7 +64,7 @@ int accept_socket(struct sockaddr_in cliente, int actual_socket, int *new_socket
         printf("Erro ao aceitar o cliente.\n");
         exit (-1);
     }
-    printf("Aceitou\n");
+    printf("Aceitou.\n");
     return 1;
 }
 
@@ -86,10 +86,3 @@ void recv_socket(char *buf, int new_socket){
     }
 
 }
-
-/*
-void close(int cliente_socket, int socket){
-    close(cliente_socket);
-    close(socket);
-}
-*/

@@ -22,19 +22,37 @@ char buf[BUFFER_LENGTH];
 
 int main(){
 
+    int actual_socket, new_socket;
+    struct sockaddr_in servidor;
+    struct sockaddr_in cliente;
+    char buf[] = "Hello World";
+    unsigned int addr_len;
+    socket_create(&actual_socket, servidor);
+    //config_socket(actual_socket);
+    addr_len = sizeof(struct sockaddr_in);
+    printf("actual socket = %d\n", actual_socket);
+    int int_pointer = 1;
+
+    if(setsockopt(actual_socket, SOL_SOCKET, SO_REUSEADDR, &int_pointer, sizeof(int)) == -1){
+        printf("Erro no socket\n");
+        exit(-1);
+    }
+
+    if(bind(actual_socket, (struct sockaddr*)&servidor, sizeof(servidor)) == -1 ) {
+        printf("Bindou errado\n");
+        exit(-1);
+    }
+
+    //bind_socket(actual_socket, servidor, addr_len);
+
+    listen_socket(actual_socket);
+
     do {
+        accept_socket(cliente, actual_socket, &new_socket);
 
-        recv_socket(buf, &new_socket);
+        send_socket(new_socket, buf);
 
-        /* 'bye' message finishes the connection */
-        if(strcmp(buf, "bye") == 0) {
-            send_socket(new_socket, buf);
-        } else {
-            send_socket(new_socket, buf);
-        }
+        close(new_socket);
+    } while(1);
 
-    } while(strcmp(buf, "bye"));
-
-    close(actual_socket);
-    close(new_socket);
 }

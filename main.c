@@ -23,31 +23,27 @@ char buf[BUFFER_LENGTH];
 int main(){
 
     int actual_socket, new_socket;
+    int int_pointer = 1;
     struct sockaddr_in servidor;
     struct sockaddr_in cliente;
     char buf[] = "Hello World";
     unsigned int addr_len;
     socket_create(&actual_socket, servidor);
-    //config_socket(actual_socket);
+    config_socket(actual_socket, &int_pointer);
+
     addr_len = sizeof(struct sockaddr_in);
-    printf("actual socket = %d\n", actual_socket);
-    int int_pointer = 1;
 
-    if(setsockopt(actual_socket, SOL_SOCKET, SO_REUSEADDR, &int_pointer, sizeof(int)) == -1){
-        printf("Erro no socket\n");
-        exit(-1);
-    }
-
-    if(bind(actual_socket, (struct sockaddr*)&servidor, sizeof(servidor)) == -1 ) {
-        printf("Bindou errado\n");
-        exit(-1);
-    }
-
-    //bind_socket(actual_socket, servidor, addr_len);
-
-    listen_socket(actual_socket);
+    bind_socket(actual_socket, servidor, addr_len);
 
     do {
+        //listen_socket(actual_socket);
+
+        if(listen(actual_socket, 3) == -1) {
+            printf("Escutou errado\n");
+            exit(-1);
+        }
+        printf("Porta: %d\n", porta);
+
         accept_socket(cliente, actual_socket, &new_socket);
 
         send_socket(new_socket, buf);

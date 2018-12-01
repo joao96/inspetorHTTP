@@ -10,7 +10,7 @@
 
 
 int socket_create(int *, struct sockaddr_in);
-int config_socket(int);
+int config_socket(int, int *);
 int bind_socket(int , struct sockaddr_in, socklen_t);
 int listen_socket(int);
 int accept_socket(struct sockaddr_in, int, int *);
@@ -34,22 +34,23 @@ int socket_create(int *actual_socket, struct sockaddr_in servidor){
     return 1;
 }
 
-int config_socket(int actual_socket){
-
-
+int config_socket(int actual_socket, int *int_pointer){
+    if(setsockopt(actual_socket, SOL_SOCKET, SO_REUSEADDR, &int_pointer, sizeof(int)) == -1){
+        printf("Erro no socket\n");
+        exit(-1);
+    }
     return 1;
 }
 
 int bind_socket(int actual_socket, struct sockaddr_in servidor, socklen_t addr_len){
-
+    if(bind(actual_socket, (struct sockaddr*)&servidor, sizeof(servidor)) == -1 ) {
+        printf("Bindou errado\n");
+        exit(-1);
+    }
     return 1;
 }
 int listen_socket(int actual_socket){
-    if(listen(actual_socket, 1) == -1) {
-        printf("Escutou errado\n");
-        exit(-1);
-    }
-    printf("Porta: %d\n", porta);
+
     return 1;
 }
 
@@ -59,6 +60,7 @@ int accept_socket(struct sockaddr_in cliente, int actual_socket, int *new_socket
         printf("Erro ao aceitar o cliente\n");
         exit (-1);
     }
+    printf("Aceitou\n");
     return 1;
 }
 
@@ -66,6 +68,7 @@ void send_socket(int actual_socket, char *buf){
     if (send(actual_socket, buf, strlen(buf), 0)) {
         printf("Conexao com o cliente esta estabelecida\n");
     }
+    printf("Sendou\n");
 }
 
 void recv_socket(char *buf, int new_socket){

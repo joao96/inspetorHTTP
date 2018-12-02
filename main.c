@@ -14,13 +14,13 @@
 #define porta 8228
 void parsing(char*, char*, char*);
 int get_host_by_name(char*, char*, int);
-
+void spider(char *);
 int main(){
 
     // sockets do servidor e cliente
     int actual_socket, new_socket;
     // tamanho do buffer
-    int BUFFER_SIZE = 4096;
+    int BUFFER_SIZE = 200000000;
     int message_len;
     struct sockaddr_in servidor, cliente;
     char *buf = malloc(BUFFER_SIZE);
@@ -46,7 +46,7 @@ int main(){
         perror("Bindou errado.\n");
     }
 
-    do {
+    //do {
         // ouve a porta
         if(listen(actual_socket, 1) == -1) {
             perror("Escutou errado.\n");
@@ -89,13 +89,15 @@ int main(){
 
         while(read(sock,buf,BUFFER_SIZE-1)!=0){
             fprintf(stderr,"%s",buf);
+            spider(buf);
             bzero(buf, BUFFER_SIZE);
         }
+
 
         // fecha o socket do cliente
         close(new_socket);
 
-    } while(1);
+   // } while(1);
 }
 
 void parsing(char* buf, char * new_http, char * new_host){
@@ -124,7 +126,6 @@ void parsing(char* buf, char * new_http, char * new_host){
 int get_host_by_name(char *new_http, char *new_host, int actual_socket){
     struct hostent *hp;
     struct sockaddr_in cliente;
-    char url [150] = "GET ";
     int on = 1, sock;
     if ((hp = gethostbyname(new_host)) == NULL){
         herror("gethostbyname");
@@ -142,10 +143,36 @@ int get_host_by_name(char *new_http, char *new_host, int actual_socket){
     char request[250] = "GET / HTTP/1.1\r\nHost: ";
     strcat(request, new_host);
     strcat(request, "\r\n\r\n\r\n");
-    /*if(send(sock, url, strlen(url), 0)){
-        printf("Novo pedido por: %s\n", url);
-    }*/
     write(sock, request, strlen(request));
 
     return sock;
+}
+
+void spider(char *html){
+    FILE *html_tree, *html_page;
+    char needle[1] = "";
+
+    html_tree = fopen("html_tree.txt", "w");
+    html_page = fopen("html_page.txt", "w");
+
+    if (html_tree == NULL) {
+        printf("Erro ao abrir o arquivo\n");
+        exit(0);
+    }
+    if (html_page == NULL) {
+        printf("Erro ao abrir o arquivo\n");
+        exit(0);
+    }
+
+    fputs(html, html_page);
+
+    while(!feof(html_page)){
+        char *href = strstr(html, "<a href=");
+        href = href + 7;
+        while(*href!= '>'){
+            fprintf(html_tree, "%s", href);
+        }
+
+    }
+
 }

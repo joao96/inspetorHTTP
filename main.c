@@ -6,13 +6,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include "ServidorSocket.c"
 
 
 //porta
 #define porta 8228
-
+void parsing(char*, char*, char*);
+void get_host_by_name(char*, char*, int);
 
 int main(){
 
@@ -24,6 +26,8 @@ int main(){
     int message_len;
     struct sockaddr_in servidor, cliente;
     char *buf = malloc(BUFFER_SIZE);
+    char new_http[150] = "", new_host[150] = "";
+
     unsigned int addr_len;
 
     // cria o socket do servidor
@@ -51,20 +55,88 @@ int main(){
       }
       printf("Porta: %d\n", porta);
 
-      int cliente_lenght = sizeof(cliente);
+      unsigned int cliente_lenght = sizeof(cliente);
       // aceita o cliente que deseja-se conectar ao servidor e reserva um socket para ele
       if ((new_socket = accept(actual_socket,(struct sockaddr *) &cliente, &cliente_lenght)) == -1) {
           perror("Erro ao aceitar o cliente.\n");
       }
       printf("Aceitou.\n");
-      // recebe o que o cliente quer transmitir
+
+      // recebe o request
       if((message_len = recv(new_socket, buf, BUFFER_LENGTH, 0)) > 0) {
           buf[message_len - 1] = '\0';
-          printf("Cliente fala: %s.\n", buf);
+          printf("Request: %s.\n", buf);
       }
+
+      // cria novo url para mandar ao cliente
+      parsing(buf, new_http, new_host);
+
+      get_host_by_name(new_http, new_host, new_socket);
+
+      /*
+      // envia novo url
+      if(send(actual_socket, new_http, strlen(new_http), 0)){
+          printf("Novo pedido por: %s", new_http);
+      }
+      */
+      //limpa o buffer antigo
+      memset(buf, 0x0, BUFFER_LENGTH);
+
+      // espera resposta do cliente
+      if((message_len = recv(actual_socket, buf, BUFFER_LENGTH, 0)) > 0) {
+          buf[message_len - 1] = '\0';
+          printf("Resposta: %s.\n", buf);
+      }
+
       // fecha o socket do cliente
       close(new_socket);
 
     } while(1);
+}
+
+void parsing(char* buf, char * new_http, char * new_host){
+    char *get = strstr(buf, "GET");
+    char *http = strstr(buf, "HTTP/1.1");
+    char *host = strstr(buf, "Host:");
+    char *user_agent = strstr(buf, "User-Agent");
+    int i, j=0;
+    int start_http = get - buf + 4;
+    int end_http = http - buf - 2;
+    int start_host = host - buf + 6;
+    int end_host = user_agent - buf - 2;
+    for(i=start_http;i<end_http;i++){
+        new_http[j] = buf[i];
+        j++;
+    }
+    strcat(new_http, "/index.html");
+    printf("concat: %s", new_http);
+    j = 0;
+    for(i=start_host;i<end_host;i++){
+        new_host[j] = buf[i];
+        j++;
+    }
+}
+
+void get_host_by_name(char *new_http, char *new_host, int new_socket){
+    struct hostent *hp;
+    struct sockaddr_in cliente;
+    int on = 1, sock;
+    if ((hp = gethostbyname(new_host)) == NULL){
+        herror("gethostbyname");
+    }
+    bcopy(hp->h_addr, &cliente.sin_addr, hp->h_length);
+    cliente.sin_port = htons(80);
+    cliente.sin_family = AF_INET;
+    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&on, sizeof(int));
+
+    if (connect(sock, (struct sockaddr *)&cliente, sizeof(struct sockaddr_in)) == -1) {
+      perror("conectou");
+      exit(1);
+    }
+
+    if(send(sock, new_http, strlen(new_http), 0)){
+        printf("Novo pedido por: %s\n", new_http);
+    }
 
 }

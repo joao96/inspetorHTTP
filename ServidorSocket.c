@@ -8,7 +8,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-
 int socket_create(int *, struct sockaddr_in *);
 int config_socket(int, int *);
 int bind_socket(int , struct sockaddr_in, socklen_t);
@@ -31,6 +30,7 @@ int socket_create(int *actual_socket, struct sockaddr_in *servidor){
     printf("Socket criado com sucesso, %d.\n", *actual_socket);
     servidor->sin_family = AF_INET;
     servidor->sin_port = htons(porta);
+    servidor->sin_addr.s_addr = INADDR_ANY;
     return 1;
 }
 
@@ -50,7 +50,7 @@ int bind_socket(int actual_socket, struct sockaddr_in servidor, socklen_t addr_l
     return 1;
 }
 int listen_socket(int actual_socket){
-    if(listen(actual_socket, 3) == -1) {
+    if(listen(actual_socket, 10) == -1) {
         printf("Escutou errado.\n");
         exit(-1);
     }

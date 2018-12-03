@@ -19,4 +19,10 @@ void parsing(char*, char*, char*);
 int get_host_by_name(char*, char*);
 void dump(char*);
 FILE *create_html_txt(char*);
-char *delchar(char*, int);
+void remove_portion(char*, int, int);
+
+struct Node{
+ char href[256];
+ struct Node *prox;
+};
+typedef struct Node node;

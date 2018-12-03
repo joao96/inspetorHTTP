@@ -13,18 +13,18 @@
 
 
 #define porta 8228 //porta
+int BUFFER_SIZE = 4096; // tamanho do buffer
 
 void parsing(char*, char*, char*);
 int get_host_by_name(char*, char*);
-FILE *spider(char*, FILE*, char*);
-void dump(FILE*, char*, char*, int);
+FILE *spider(char*);
+void dump(FILE*, char*, char*);
 FILE *create_html_txt(char*);
 
 int main(){
 
     FILE *html_file = NULL, *html_tree = NULL;
     int actual_socket, new_socket; // sockets do servidor e cliente
-    int BUFFER_SIZE = 200000000; // tamanho do buffer
     long int message_len;
     struct sockaddr_in servidor, cliente;
     char *buf = malloc(BUFFER_SIZE);
@@ -52,45 +52,51 @@ int main(){
 
     //do {
         // ouve a porta
-        if(listen(actual_socket, 1) == -1) {
-            perror("Escutou errado.\n");
-        }
-        printf("Porta: %d\n", porta);
+    if(listen(actual_socket, 1) == -1) {
+        perror("Escutou errado.\n");
+    }
+    printf("Porta: %d\n", porta);
 
-        unsigned int cliente_lenght = sizeof(cliente);
+    unsigned int cliente_lenght = sizeof(cliente);
 
-        // aceita o cliente que deseja-se conectar ao servidor e reserva um socket para ele
-        if ((new_socket = accept(actual_socket,(struct sockaddr *) &cliente, &cliente_lenght)) == -1) {
-            perror("Erro ao aceitar o cliente.\n");
-        }
-        printf("Aceitou.\n");
-
-
-        if((message_len = recv(new_socket, buf, BUFFER_SIZE, 0)) > 0) {  // recebe o request
-            buf[message_len - 1] = '\0';
-            //printf("Request: %s.\n", buf);
-        }
+    // aceita o cliente que deseja-se conectar ao servidor e reserva um socket para ele
+    if ((new_socket = accept(actual_socket,(struct sockaddr *) &cliente, &cliente_lenght)) == -1) {
+        perror("Erro ao aceitar o cliente.\n");
+    }
+    printf("Aceitou.\n");
 
 
-        memset(new_http, 0x0, 150); // cria novo url para mandar ao cliente
-        parsing(buf, new_http, new_host);
+    if((message_len = recv(new_socket, buf, BUFFER_SIZE, 0)) > 0) {  // recebe o request
+        buf[message_len - 1] = '\0';
+        //printf("Request: %s.\n", buf);
+    }
 
-        // faz novo GET para o cliente
-        int sock = get_host_by_name(new_http, new_host);
+    memset(new_http, 0x0, 150); // cria novo url para mandar ao cliente
+    parsing(buf, new_http, new_host);
 
+    // faz novo GET para o cliente
+    int sock = get_host_by_name(new_http, new_host);
 
-        memset(buf, 0x0, BUFFER_SIZE); //limpa o buffer antigo
+    memset(buf, 0x0, BUFFER_SIZE); //limpa o buffer antigo
 
+    html_file = fopen("html_file.txt", "a");
 
-        while(read(sock, buf, BUFFER_SIZE-1)!=0){
-            html_file = create_html_txt(buf);
-            bzero(buf, BUFFER_SIZE);
-        }
+    if(html_file == NULL){
+        printf("Erro ao abrir o arquivo.\n");
+        exit(6);
+    }
 
-        html_tree = spider(buf, html_file, new_host);
-        dump(html_tree, new_host, new_http, sock);
+    while(read(sock, buf, BUFFER_SIZE-1)!=0){
+        //fprintf(stderr, "%s", buf);
+        fputs(buf, html_file);
+        bzero(buf, BUFFER_SIZE);
+    }
 
-        close(new_socket); // fecha o socket do cliente
+    html_tree = spider(new_host);
+    //dump(html_tree, new_host, new_http);
+
+    fclose(html_tree);
+    close(new_socket); // fecha o socket do cliente
 
    // } while(1);
 }
@@ -131,7 +137,7 @@ int get_host_by_name(char *new_http, char *new_host){
     setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&on, sizeof(int));
 
     if (connect(sock, (struct sockaddr *)&cliente, sizeof(struct sockaddr_in)) == -1) {
-        perror("conectou");
+        perror("nao foi possivel conectar.");
         exit(1);
     }
     char request[250] = "GET / HTTP/1.1\r\nHost: ";
@@ -142,51 +148,55 @@ int get_host_by_name(char *new_http, char *new_host){
     return sock;
 }
 
-FILE * spider(char *html, FILE *html_file, char *host){
-     FILE *html_tree;
-     char href[256], buf[2000000], c;
+FILE * spider(char *host) {
+     FILE *html_tree, *html_file;
+     char *href, buf[BUFFER_SIZE], c;
      char *needle;
-     long int i, j=0;
+     size_t href_size = 256;
+     long int i = 0, j=0;
+     href = (char *)malloc(href_size * sizeof(char));
+     bzero(href, 256);
+     bzero(buf, BUFFER_SIZE);
 
      html_file = fopen("html_file.txt", "r");
      html_tree = fopen("html_tree.txt", "a");
 
      if(html_file == NULL){
-         printf("Erro ao abrir o arquivo\n");
-         exit(0);
+         printf("Erro ao abrir o arquivo.\n");
+         exit(1);
      }
 
     if(html_tree == NULL){
-        printf("Erro ao abrir o arquivo\n");
-        exit(0);
+        printf("Erro ao abrir o arquivo.\n");
+        exit(2);
     }
-
-     while (fgets(href, sizeof(href), html_file)) {
-
-         if((needle = strstr(href, "href=")) != NULL){
-             i = needle - href + 6;
-             while((c = href[i])!= '"'){
-                 buf[j] = c;
-                 i++;
-                 j++;
-             }
-             strcat(buf, "\r\n");
-             if(strstr(buf, host) != NULL){
-                 fputs(buf, html_tree);
-             }
-             bzero(buf, 2000000);
-             j = 0;
+    while(getline(&href, &href_size, html_file) != -1) {
+        if((needle = strstr(href, "href=")) != NULL){
+            i = needle - href + 6;
+            while((c = href[i])!= '"'){
+                buf[j] = c;
+                i++;
+                j++;
+            }
+            strcat(buf, "\r\n");
+            if(strstr(buf, host) != NULL){
+                fputs(buf, html_tree);
+            }
+            bzero(buf, BUFFER_SIZE);
+            j = 0;
         }
-     }
+    }
     fclose(html_file);
     fclose(html_tree);
     return html_tree;
 }
 
-void dump(FILE *html_tree, char *host, char *http, int sock){
-
+void dump(FILE *html_tree, char *host, char *http) {
+    struct hostent *hp;
+    struct sockaddr_in cliente;
+    int on = 1, sock;
     long int i, j = 0, k = 0;
-    char *buf = malloc(200000000);
+    char *buf = malloc(BUFFER_SIZE);
     char dir[150];
     char reverse_dir[150];
     char href[256], c;
@@ -200,10 +210,22 @@ void dump(FILE *html_tree, char *host, char *http, int sock){
 
     if(html_tree == NULL){
         printf("Erro ao abrir o arquivo\n");
-        exit(0);
+        exit(3);
     }
 
     while (fgets(href, sizeof(href), html_tree)) {
+        if ((hp = gethostbyname(host)) == NULL){
+            herror("gethostbyname");
+        }
+        bcopy(hp->h_addr, &cliente.sin_addr, hp->h_length);
+        cliente.sin_port = htons(80);
+        cliente.sin_family = AF_INET;
+        sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&on, sizeof(int));
+        if (connect(sock, (struct sockaddr *)&cliente, sizeof(struct sockaddr_in)) == -1) {
+            perror("nao foi possivel conectar.");
+            exit(4);
+        }
         memset(dir, '\0', 150);
         memset(reverse_dir, '\0', 150);
         if((needle = strstr(href, "\r\n")) != NULL){
@@ -234,36 +256,29 @@ void dump(FILE *html_tree, char *host, char *http, int sock){
             k++;
             i++;
         }
-        href[k] = '\0';
+        href[k-2] = '\0';
         char request[1000] = "GET ";
         strcat(request, href);
-        strcat(request, "HTTP/1.1\r\nHost: ");
+        strcat(request, " HTTP/1.1\r\nHost: ");
         strcat(request, host);
         strcat(request, "\r\n\r\n");
         printf("%s\n", request);
         write(sock, request, strlen(request));
-        memset(buf, 0x0, 200000000); //limpa o buffer antigo
-        while(read(sock, buf, 200000000-1) != 0){
-            printf("entrouuu");
-            fprintf(stderr,"%s",buf);
-            strcat(dir, "/");
-            strcat(dir,buf);
-            FILE *file = fopen(dir, "w");
-            fputs(buf, file);
+        memset(buf, 0x0, BUFFER_SIZE); //limpa o buffer antigo
+        strcat(dir, "/");
+        strcat(dir, "a");
+        FILE *file = fopen(dir, "w");
+        if(file != NULL){
+            while(read(sock, buf, BUFFER_SIZE-1) != 0){
+                fprintf(stderr,"%s", buf);
+                fputs(buf, file);
+            }
         }
+        else{
+            printf("Erro ao abrir o arquivo\n");
+            exit(5);
+        }
+        close(sock);
     }
 
-}
-
-FILE * create_html_txt(char *html){
-
-    FILE * html_file = fopen("html_file.txt", "a");
-
-    if(html_file == NULL){
-        printf("Erro ao abrir o arquivo\n");
-        exit(0);
-    }
-
-    fputs(html, html_file);
-    return html_file;
 }

@@ -7,7 +7,7 @@ void dump(char *host) {
     int on = 1, sock;
     long int i, j = 0, k = 0;
     char l;
-    char buf[BUFFER_SIZE];
+    char buf[BUFFER_SIZE], aux_buf[BUFFER_SIZE];
     char dir[150];
     char reverse_dir[150];
     char href[256], c;
@@ -98,14 +98,21 @@ void dump(char *host) {
         }
         FILE *file = fopen(dir, "w");
         if(file != NULL){
+            j = 0;
             while(read(sock, buf, BUFFER_SIZE-1) != 0){
                 if(needle = strstr(buf, "\r\n\r\n")){
                     printf("Header encontrado.\n");
                     i = needle - buf + 4;
-                    printf("i: %ld\n", i);
-                    remove_portion(buf, 0, i);
+                    while(buf[i] != '\0'){
+                        aux_buf[j] = buf[i];
+                        i++;
+                        j++;
+                    }
+                    fwrite(aux_buf, 1, sizeof(aux_buf), file);
                 }
-                fwrite(buf, 1 , sizeof(buf), file);
+                else
+                    fwrite(buf, 1 , sizeof(buf), file);
+                bzero(aux_buf, BUFFER_SIZE);
                 bzero(buf, BUFFER_SIZE);
             }
             fclose(file);
@@ -115,10 +122,5 @@ void dump(char *host) {
             exit(5);
         }
         close(sock);
-    }
-}
-void remove_portion(char *buf, int start, int end){
-    if (start>=0 && end>=start && start<strlen(buf) && end<strlen(buf)){
-         memmove(buf+start, buf+end+1, strlen(buf)-(end+1)+1);  // final +1 to copy string terminator
     }
 }

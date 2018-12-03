@@ -1,17 +1,23 @@
 #include "functions.h"
 
 int BUFFER_SIZE = 4096; // tamanho do buffer
+int porta;
 
-int main(){
+int main( int argc, char *argv[] ){
 
     FILE *html_file = NULL, *html_tree = NULL;
     int actual_socket, new_socket; // sockets do servidor e cliente
     long int message_len;
+    unsigned int addr_len;
     struct sockaddr_in servidor, cliente;
     char *buf = malloc(BUFFER_SIZE);
     char new_http[150] = "", new_host[150] = "";
 
-    unsigned int addr_len;
+    if(argv[1] == NULL)
+        porta = 8228;
+    else
+        porta = atoi(argv[1]);
+
 
     // cria o socket do servidor
     actual_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -30,7 +36,6 @@ int main(){
     if(bind(actual_socket, (struct sockaddr*)&servidor, sizeof(servidor)) < 0) {
         perror("Bindou errado.\n");
     }
-
     //do {
         // ouve a porta
     if(listen(actual_socket, 1) == -1) {
@@ -127,15 +132,4 @@ int get_host_by_name(char *new_http, char *new_host){
     write(sock, request, strlen(request));
 
     return sock;
-}
-
-char *delchar(char *x, int start) {
-    char *buf = malloc(BUFFER_SIZE);
-    bzero(buf, BUFFER_SIZE);
-    int i = 0;
-    while(x[start] != '\0'){
-        buf[i] = x[start+i];
-        // printf("%c", buf[i]);
-    }
-    return buf;
 }

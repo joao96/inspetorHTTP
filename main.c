@@ -1,25 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <netdb.h>
-#include <sys/stat.h>
+#include "functions.h"
 
-
-
-#define porta 8228 //porta
 int BUFFER_SIZE = 4096; // tamanho do buffer
-
-void parsing(char*, char*, char*);
-int get_host_by_name(char*, char*);
-FILE *spider(char*);
-void dump(char*);
-FILE *create_html_txt(char*);
 
 int main(){
 
@@ -92,7 +73,7 @@ int main(){
         bzero(buf, BUFFER_SIZE);
     }
 
-    html_tree = spider(new_host);
+    spider(new_host);
     dump(new_host);
 
     fclose(html_tree);
@@ -146,49 +127,6 @@ int get_host_by_name(char *new_http, char *new_host){
     write(sock, request, strlen(request));
 
     return sock;
-}
-
-FILE * spider(char *host) {
-     FILE *html_tree, *html_file;
-     char *href, buf[BUFFER_SIZE], c;
-     char *needle;
-     size_t href_size = 256;
-     long int i = 0, j=0;
-     href = (char *)malloc(href_size * sizeof(char));
-     bzero(href, 256);
-     bzero(buf, BUFFER_SIZE);
-
-     html_file = fopen("html_file.txt", "r");
-     html_tree = fopen("html_tree.txt", "a");
-
-     if(html_file == NULL){
-         printf("Erro ao abrir o arquivo. 1\n");
-         exit(1);
-     }
-
-    if(html_tree == NULL){
-        printf("Erro ao abrir o arquivo. 2\n");
-        exit(2);
-    }
-    while(getline(&href, &href_size, html_file) != -1) {
-        if((needle = strstr(href, "href=")) != NULL){
-            i = needle - href + 6;
-            while((c = href[i])!= '"'){
-                buf[j] = c;
-                i++;
-                j++;
-            }
-            strcat(buf, "\r\n");
-            if(strstr(buf, host) != NULL){
-                fputs(buf, html_tree);
-            }
-            bzero(buf, BUFFER_SIZE);
-            j = 0;
-        }
-    }
-    fclose(html_file);
-    fclose(html_tree);
-    return html_tree;
 }
 
 void dump(char *host) {
@@ -293,9 +231,14 @@ void dump(char *host) {
         FILE *file = fopen(dir, "w");
         if(file != NULL){
             while(read(sock, buf, BUFFER_SIZE-1) != 0){
+                if(needle = strstr(buf, "\r\n\r\n")){
+                    printf("Header encontrado.\n");
+                    i = needle - buf + 8;
+                    //buf = delchar(buf, i);
+                }
                 fputs(buf, file);
-                bzero(buf, BUFFER_SIZE);
             }
+            bzero(buf, BUFFER_SIZE);
         }
         else{
             printf("Erro ao abrir o arquivo 5.\n");
@@ -304,4 +247,15 @@ void dump(char *host) {
         close(sock);
     }
 
+}
+
+char *delchar(char *x, int start) {
+    char *buf = malloc(BUFFER_SIZE);
+    bzero(buf, BUFFER_SIZE);
+    int i = 0;
+    while(x[start] != '\0'){
+        buf[i] = x[start+i];
+        // printf("%c", buf[i]);
+    }
+    return buf;
 }

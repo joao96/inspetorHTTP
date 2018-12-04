@@ -5,7 +5,7 @@ void spider(char *url, char *host) {
      FILE *html_tree, *html_file;
      char *href, buf[BUFFER_SIZE], c;
      char *needle;
-     char final_url[250];
+     char final_url[256];
      size_t href_size = 256;
      long int i = 0, j=0, flag;
      href = (char *)malloc(href_size * sizeof(char));
@@ -49,7 +49,6 @@ void spider(char *url, char *host) {
                 node *temp = head_href;
                 flag = 1;
                 while(temp->prox != NULL && flag == 1){
-//                    printf("oi\n");
                     if(strcmp(temp->prox->href, buf) != 0){
                         temp = temp->prox;
                     }

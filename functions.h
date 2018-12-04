@@ -14,10 +14,10 @@ extern int porta;
 
 extern int BUFFER_SIZE;
 
-void spider(char *);
+void spider(char *, char *);
 void parsing(char*, char*, char*);
 int get_host_by_name(char*, char*);
-void dump(char*);
+void dump(char*, char*);
 
 struct Node{
  char href[256];

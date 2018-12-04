@@ -1,9 +1,10 @@
 #include "functions.h"
 
-void spider(char *host) {
+void spider(char *url, char *host) {
      FILE *html_tree, *html_file;
      char *href, buf[BUFFER_SIZE], c;
      char *needle;
+     char final_url[250];
      size_t href_size = 256;
      long int i = 0, j=0, flag;
      href = (char *)malloc(href_size * sizeof(char));
@@ -28,6 +29,12 @@ void spider(char *host) {
         printf("Erro ao abrir o arquivo. 2\n");
         exit(2);
     }
+
+    if(strcmp(url, host) == 0)
+        strcpy(final_url, host);
+    else
+        strcpy(final_url, url);
+
     while(getline(&href, &href_size, html_file) != -1) {
         if((needle = strstr(href, "href=")) != NULL){
             i = needle - href + 6;
@@ -37,10 +44,11 @@ void spider(char *host) {
                 j++;
             }
             strcat(buf, "\r\n");
-            if(strstr(buf, host) != NULL){
+            if(strstr(buf, final_url) != NULL){
                 node *temp = head_href;
                 flag = 1;
                 while(temp->prox != NULL && flag == 1){
+                    printf("oi\n");
                     if(strcmp(temp->prox->href, buf) != 0){
                         temp = temp->prox;
                     }

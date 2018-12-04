@@ -1,6 +1,6 @@
 #include "functions.h"
 
-void dump(char *host) {
+void dump(char *url, char *host) {
     FILE *html_tree;
     struct hostent *hp;
     struct sockaddr_in cliente;
@@ -11,6 +11,8 @@ void dump(char *host) {
     char dir[150];
     char reverse_dir[150];
     char href[256], c;
+    char request[500];
+    char final_url[250];
     char *needle;
     bzero(dir, 150);
     bzero(reverse_dir, 150);
@@ -71,18 +73,18 @@ void dump(char *host) {
                 j++;
             }
         }
-        needle = strstr(href, host);
+        needle = strstr(href, url);
         i = needle - href + 0;
         k = 0;
         while(href[i] != '/')
-        i++;
+            i++;
         while(href[i] != '\0'){
             href[k] = href[i];
             k++;
             i++;
         }
         href[k-2] = '\0';
-        char request[1000] = "GET ";
+        strcat(request, "GET ");
         strcat(request, href);
         strcat(request, " HTTP/1.1\r\nHost: ");
         strcat(request, host);
@@ -101,7 +103,6 @@ void dump(char *host) {
             j = 0;
             while(read(sock, buf, BUFFER_SIZE-1) != 0){
                 if(needle = strstr(buf, "\r\n\r\n")){
-                    printf("Header encontrado.\n");
                     i = needle - buf + 4;
                     while(buf[i] != '\0'){
                         aux_buf[j] = buf[i];

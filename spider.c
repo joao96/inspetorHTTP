@@ -1,6 +1,7 @@
 #include "functions.h"
 
 void spider(char *url, char *host) {
+     printf("SPIDER ON\n");
      FILE *html_tree, *html_file;
      char *href, buf[BUFFER_SIZE], c;
      char *needle;
@@ -48,7 +49,7 @@ void spider(char *url, char *host) {
                 node *temp = head_href;
                 flag = 1;
                 while(temp->prox != NULL && flag == 1){
-                    printf("oi\n");
+//                    printf("oi\n");
                     if(strcmp(temp->prox->href, buf) != 0){
                         temp = temp->prox;
                     }

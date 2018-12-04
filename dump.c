@@ -12,7 +12,6 @@ void dump(char *url, char *host) {
     char reverse_dir[150];
     char href[256], c;
     char request[500];
-    char final_url[250];
     char *needle;
     bzero(dir, 150);
     bzero(reverse_dir, 150);
@@ -73,11 +72,10 @@ void dump(char *url, char *host) {
                 j++;
             }
         }
-        needle = strstr(href, url);
-        i = needle - href + 0;
+
+
+        i = strlen(url) - 1;
         k = 0;
-        while(href[i] != '/')
-            i++;
         while(href[i] != '\0'){
             href[k] = href[i];
             k++;
@@ -102,7 +100,7 @@ void dump(char *url, char *host) {
         if(file != NULL){
             j = 0;
             while(read(sock, buf, BUFFER_SIZE-1) != 0){
-                if(needle = strstr(buf, "\r\n\r\n")){
+                if((needle = strstr(buf, "\r\n\r\n"))){
                     i = needle - buf + 4;
                     while(buf[i] != '\0'){
                         aux_buf[j] = buf[i];
@@ -123,5 +121,9 @@ void dump(char *url, char *host) {
             exit(5);
         }
         close(sock);
+        bzero(dir,150);
+        bzero(reverse_dir,150);
+        bzero(href, 256);
+        bzero(request, 500);
     }
 }

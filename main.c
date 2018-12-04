@@ -33,6 +33,14 @@ int main( int argc, char *argv[] ){
 
     addr_len = sizeof(struct sockaddr_in);
 
+    int tr=1;
+
+    // kill "Address already in use" error message
+    if (setsockopt(actual_socket,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) {
+        perror("setsockopt");
+        exit(1);
+    }
+
     // conecta o servidor ao socket criado
     if(bind(actual_socket, (struct sockaddr*)&servidor, sizeof(servidor)) < 0) {
         perror("Erro Bind.\n");

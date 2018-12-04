@@ -11,7 +11,7 @@ void dump(char *url, char *host) {
     char dir[150];
     char reverse_dir[150];
     char href[256], c;
-    char request[500];
+    char request[500] = "\0";
     char *needle;
     bzero(dir, 150);
     bzero(reverse_dir, 150);

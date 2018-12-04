@@ -11,10 +11,12 @@ int main( int argc, char *argv[] ){
     unsigned int addr_len;
     struct sockaddr_in servidor, cliente;
     char *buf = malloc(BUFFER_SIZE);
-    char new_url[150] = "", new_host[150] = "";
+    char new_url[150] = "\0", new_host[150] = "\0";
     int c, i, opcao = 0;
+    unsigned int cliente_lenght = sizeof(cliente);
+    int tr=1;
 
-    if(argv[1]){
+    if(argv[1]){ // tratamento para o argumento do número da porta
         if(strcmp(argv[1], "-p") == 0)
             if(argv[2] != NULL)
                 porta = atoi(argv[2]);
@@ -29,45 +31,52 @@ int main( int argc, char *argv[] ){
 
     servidor.sin_family = AF_INET;
     servidor.sin_addr.s_addr = INADDR_ANY;
-    servidor.sin_port = htons(porta); // conecta-se a porta 8228
+    servidor.sin_port = htons(porta); // conecta-se a porta 8228 ou a porta passada por argv
 
     addr_len = sizeof(struct sockaddr_in);
+
+
+    if (setsockopt(actual_socket,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) {
+        perror("setsockopt");
+        exit(1);
+    }
 
     // conecta o servidor ao socket criado
     if(bind(actual_socket, (struct sockaddr*)&servidor, sizeof(servidor)) < 0) {
         perror("Erro Bind.\n");
     }
     //do {
-        // ouve a porta
-    if(listen(actual_socket, 1) == -1) {
+    if(listen(actual_socket, 1) == -1) { // ouve a porta
         perror("Erro ao Escutar.\n");
     }
     printf("Porta: %d\n", porta);
-
-    unsigned int cliente_lenght = sizeof(cliente);
 
     // aceita o cliente que deseja-se conectar ao servidor e reserva um socket para ele
     if ((new_socket = accept(actual_socket,(struct sockaddr *) &cliente, &cliente_lenght)) == -1) {
         perror("Erro ao aceitar o cliente.\n");
     }
-    printf("Aceitou.\n");
-
+    printf("Cliente aceito.\n");
 
     if((message_len = recv(new_socket, buf, BUFFER_SIZE, 0)) > 0) {  // recebe o request
         buf[message_len - 1] = '\0';
-        if(strstr(buf, "POST") != NULL){
+
+        if(strstr(buf, "POST") != NULL) { // se o tipo do request for POST, encerra o programa
             printf("Requisicao do tipo POST.\n");
             exit(0);
         }
+
         request_file = fopen("request.txt", "w");
+
         if(request_file == NULL){
             printf("Arquivo de request nao foi aberto.\n");
+            exit(1);
         }
         printf("Request: %s.\n", buf);
         fputs(buf, request_file);
         fclose(request_file);
         system("nano request.txt");
         request_file = fopen("request.txt", "r");
+
         i = 0;
         bzero(buf, BUFFER_SIZE);
         if (request_file) {
@@ -77,73 +86,72 @@ int main( int argc, char *argv[] ){
             }
             fclose(request_file);
         }
-        //printf("NEW BUFFER: %s\n", buf);
     }
 
-    memset(new_url, 0x0, 150); // cria novo url para mandar ao cliente
     parsing(buf, new_url, new_host);
 
     // faz novo GET para o cliente
     int sock = get_host_by_name(new_url, new_host);
 
-    memset(buf, 0x0, BUFFER_SIZE); //limpa o buffer antigo
+    bzero(buf, BUFFER_SIZE); //limpa o buffer antigo
 
-    html_file = fopen("html_file.txt", "a");
+    html_file = fopen("html_file.txt", "w");
 
     if(html_file == NULL){
         printf("Erro ao abrir o arquivo.\n");
-        exit(6);
+        exit(2);
     }
 
-    while(read(sock, buf, BUFFER_SIZE-1)!=0){
-        //fprintf(stderr, "%s", buf);
+    while(read(sock, buf, BUFFER_SIZE - 1) != 0){
         fputs(buf, html_file);
-        send(new_socket, buf, strlen(buf), 0);
+        // send(new_socket, buf, BUFFER_SIZE, 0);
         bzero(buf, BUFFER_SIZE);
     }
 
-    do{
-        printf("*************************************************************\n");
-        printf("*                       Inspetor HTTP                       *\n");
-        printf("*************************************************************\n");
-
-        printf("1 - SPIDER.\n");
-        printf("2 - DUMP.\n");
-        printf("3 - SAIR.\n");
-        printf("Digite a opcao: ");
-        scanf("%d", &opcao);
-
-        switch (opcao) {
-            case 1:
-                spider(new_url, new_host);
-                break;
-
-
-            case 2:
-                html_tree = fopen("html_tree.txt", "a");
-                if(html_tree != NULL){
-                    fseek (html_tree, 0, SEEK_END);
-                    if (ftell(html_tree) == 0) {
-                        printf("Arquivo vazio!\n");
-                    }else{
-                        dump(new_url, new_host);
-                    }
-                }else{
-                    printf("Nao foi possivel abrir o html tree.\n");
-                }
-                break;
-            case 3:
-                printf("Fim do INSPETOR HTTP.\n");
-                exit(0);
-            default:
-                printf("Opcao Invalida.\n");
-        }
-
-    }while(opcao == 1 || opcao == 2 || opcao == 3);
-    fclose(html_tree);
+    // do{
+    //     printf("*************************************************************\n");
+    //     printf("*                       Inspetor HTTP                       *\n");
+    //     printf("*************************************************************\n");
+    //
+    //     printf("1 - SPIDER.\n");
+    //     printf("2 - DUMP.\n");
+    //     printf("3 - SAIR.\n");
+    //     printf("Digite a opcao: ");
+    //     scanf("%d", &opcao);
+    //
+    //     switch (opcao) {
+    //         case 1:
+    //             spider(new_url, new_host);
+    //             break;
+    //
+    //
+    //         case 2:
+    //             html_tree = fopen("html_tree.txt", "a");
+    //             if(html_tree != NULL){
+    //                 fseek (html_tree, 0, SEEK_END);
+    //                 if (ftell(html_tree) == 0) {
+    //
+    //                 printf("Arquivo vazio!\n");
+    //                 }else{
+    //                     dump(new_url, new_host);
+    //                 }
+    //             }else{
+    //                 printf("Nao foi possivel abrir o html tree.\n");
+    //             }
+    //             break;
+    //         case 3:
+    //             printf("Fim do INSPETOR HTTP.\n");
+    //             exit(3);
+    //         default:
+    //             printf("Opcao Invalida.\n");
+    //     }
+    //
+    // }while(opcao == 1 || opcao == 2 || opcao == 3);
+    fclose(html_file);
     close(new_socket); // fecha o socket do cliente
 
-   // } while(1);
+    return 0;
+    // } while(1);
 }
 
 void parsing(char* buf, char * new_url, char * new_host){
@@ -156,6 +164,7 @@ void parsing(char* buf, char * new_url, char * new_host){
     long int end_url = http - buf - 1;
     long int start_host = host - buf + 6;
     long int end_host = user_agent - buf - 2;
+
     for(i=start_url;i<end_url;i++){
         new_url[j] = buf[i];
         j++;
@@ -168,6 +177,7 @@ void parsing(char* buf, char * new_url, char * new_host){
 }
 
 int get_host_by_name(char *new_url, char *new_host){
+
     struct hostent *hp;
     char request[250];
     struct sockaddr_in cliente;
@@ -184,8 +194,8 @@ int get_host_by_name(char *new_url, char *new_host){
     setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&on, sizeof(int));
 
     if (connect(sock, (struct sockaddr *)&cliente, sizeof(struct sockaddr_in)) == -1) {
-        perror("nao foi possivel conectar.");
-        exit(1);
+        perror("Nao foi possivel conectar.");
+        exit(4);
     }
     if(strcmp(new_url, new_host) == 0) {
         strcat(request, "GET / HTTP/1.1\r\nHost: ");

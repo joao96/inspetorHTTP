@@ -22,18 +22,19 @@ int main( int argc, char *argv[] ){
                 porta = atoi(argv[2]);
     }
 
-    // cria o socket do servidor
-    actual_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if(actual_socket < 0){
-        perror("Nao foi possivel criar o socket do servidor.\n");
-    }
-    printf("Socket criado com sucesso.\n");
+    do{
+        // cria o socket do servidor
+        actual_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if(actual_socket < 0){
+            perror("Nao foi possivel criar o socket do servidor.\n");
+        }
+        printf("Socket criado com sucesso.\n");
 
     servidor.sin_family = AF_INET;
     servidor.sin_addr.s_addr = INADDR_ANY;
     servidor.sin_port = htons(porta); // conecta-se a porta 8228 ou a porta passada por argv
 
-    addr_len = sizeof(struct sockaddr_in);
+        addr_len = sizeof(struct sockaddr_in);
 
 
     if (setsockopt(actual_socket,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) {
@@ -83,15 +84,29 @@ int main( int argc, char *argv[] ){
                 buf[i] = c;
                 i++;
             }
+            printf("Request: %s.\n", buf);
+            fputs(buf, request_file);
             fclose(request_file);
+            system("nano request.txt");
+            request_file = fopen("request.txt", "r");
+            i = 0;
+            bzero(buf, BUFFER_SIZE);
+            if (request_file) {
+                while ((c = getc(request_file)) != EOF){
+                    buf[i] = c;
+                    i++;
+                }
+                fclose(request_file);
+            }
+            //printf("NEW BUFFER: %s\n", buf);
         }
     }
 
     printf("Request: %s.\n", buf);
     parsing(buf, new_url, new_host);
 
-    // faz novo GET para o cliente
-    int sock = get_host_by_name(new_url, new_host);
+        // faz novo GET para o cliente
+        int sock = get_host_by_name(new_url, new_host);
 
     bzero(buf, BUFFER_SIZE); //limpa o buffer antigo
 

@@ -11,7 +11,8 @@ int main(int argc, char *argv[] ){
     unsigned int addr_len;
     struct sockaddr_in servidor, cliente;
     char *buf = malloc(BUFFER_SIZE);
-    char new_url[150] = "\0", new_host[150] = "\0";
+    char dir[150] = "\0", nano[200] = "\0";
+    char new_url[150] = "\0", new_host[150] = "\0", aux_url[150] = "\0";
     int c, i, opcao = 0;
     unsigned int cliente_lenght = sizeof(cliente);
     int tr=1;
@@ -104,10 +105,19 @@ int main(int argc, char *argv[] ){
 
         bzero(buf, BUFFER_SIZE); //limpa o buffer antigo
 
-        html_file = fopen("html_file.txt", "w");
+        bzero(dir, 150);
+        strcpy(aux_url, new_url);
+        for(i=0;i<strlen(aux_url);i++){
+            if(aux_url[i] == '/' || aux_url[i] == ':')
+                aux_url[i] = '-';
+        }
+        strcpy(dir, aux_url);
+        strcat(dir, "/index.txt");
+        mkdir(aux_url, S_IRUSR | S_IWUSR | S_IXUSR);
+        html_file = fopen(dir, "w");
 
         if(html_file == NULL){
-            printf("Erro ao abrir o arquivo.\n");
+            printf("Erro ao abrir o arquivo. MAIN 1\n");
             exit(2);
         }
 
@@ -116,8 +126,10 @@ int main(int argc, char *argv[] ){
             bzero(buf, BUFFER_SIZE);
         }
         fclose(html_file);
-        system("nano html_file.txt");
-        html_file = fopen("html_file.txt", "r");
+        strcat(nano, "nano ");
+        strcat(nano, dir);
+        system(nano);
+        html_file = fopen(dir, "r");
         bzero(buf, BUFFER_SIZE);
         while(fread(buf, 1, BUFFER_SIZE, html_file) == BUFFER_SIZE){
             send(new_socket, buf, BUFFER_SIZE, 0);
@@ -138,12 +150,11 @@ int main(int argc, char *argv[] ){
 
             switch (opcao) {
                 case 1:
-                    spider(new_url, new_host);
+                    spider(new_url, new_host, aux_url);
                     break;
 
-
                 case 2:
-                    html_tree = fopen("html_tree.txt", "a");
+                    html_tree = fopen(dir, "a");
                     if(html_tree != NULL){
                         fseek (html_tree, 0, SEEK_END);
                         if (ftell(html_tree) == 0) {

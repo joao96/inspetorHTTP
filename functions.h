@@ -16,7 +16,7 @@ extern int BUFFER_SIZE;
 #define TRUE 1
 #define FALSE 0
 
-void spider(char *, char *);
+void spider(char *, char *, char *);
 void parsing(char*, char*, char*);
 int get_host_by_name(char*, char*);
 void dump(char*, char*);
@@ -27,7 +27,6 @@ struct Arvore{
 };
 typedef struct Arvore arvore;
 
-void make_tree(char*, struct Arvore *);
+void make_tree(char*, struct Arvore *, char *, char *, char *);
 void initialize_node(struct Arvore *);
-
 int walk_tree(char*, struct Arvore *);

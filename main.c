@@ -104,9 +104,16 @@ int main( int argc, char *argv[] ){
 
     while(read(sock, buf, BUFFER_SIZE - 1) != 0){
         fputs(buf, html_file);
-        send(new_socket, buf, BUFFER_SIZE, 0);
         bzero(buf, BUFFER_SIZE);
     }
+    fclose(html_file);
+    system("nano html_file.txt");
+    html_file = fopen("html_file.txt", "r");
+    bzero(buf, BUFFER_SIZE);
+    while(fread(buf, 1, BUFFER_SIZE, html_file) == BUFFER_SIZE){
+        send(new_socket, buf, BUFFER_SIZE, 0);
+    }
+
 
     // do{
     //     printf("*************************************************************\n");
@@ -147,6 +154,8 @@ int main( int argc, char *argv[] ){
     //     }
     //
     // }while(opcao == 1 || opcao == 2 || opcao == 3);
+
+
     fclose(html_file);
     close(new_socket); // fecha o socket do cliente
 

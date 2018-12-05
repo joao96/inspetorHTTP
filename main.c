@@ -3,7 +3,7 @@
 int BUFFER_SIZE = 4096; // tamanho do buffer
 int porta = 8228;
 
-int main( int argc, char *argv[] ){
+int main(int argc, char *argv[] ){
 
     FILE *html_file = NULL, *html_tree = NULL, *request_file = NULL;
     int actual_socket, new_socket; // sockets do servidor e cliente

@@ -1,30 +1,30 @@
 #include "functions.h"
 
 void spider(char *url, char *host) {
-     printf("SPIDER ON\n");
-     FILE *html_tree, *html_file;
-     char *href, buf[BUFFER_SIZE], c;
-     char *needle;
-     char final_url[250];
-     size_t href_size = 256;
-     long int i = 0, j=0, flag;
-     href = (char *)malloc(href_size * sizeof(char));
-     bzero(href, 256);
-     bzero(buf, BUFFER_SIZE);
-     node *head_href = (node *)malloc(sizeof(node));
-     if(!head_href){
-         printf("Sem memoria disponivel!\n");
-         exit(0);
-     }
-     head_href->prox = NULL;
+    printf("SPIDER ON\n");
+    FILE *html_tree, *html_file;
+    char *href, buf[BUFFER_SIZE], c;
+    char *needle;
+    char final_url[250];
+    size_t href_size = 256;
+    long int i = 0, j=0;
+    href = (char *)malloc(href_size * sizeof(char));
+    bzero(href, 256);
+    bzero(buf, BUFFER_SIZE);
+    arvore *head_href = (arvore *)malloc(sizeof(arvore));
+    if(!head_href){
+        printf("Sem memoria disponivel!\n");
+        exit(0);
+    }
+    initialize_node(head_href);
 
-     html_file = fopen("html_file.txt", "r");
-     html_tree = fopen("html_tree.txt", "a");
+    html_file = fopen("html_file.txt", "r");
+    html_tree = fopen("html_tree.txt", "a");
 
-     if(html_file == NULL){
-         printf("Erro ao abrir o arquivo. 1\n");
-         exit(1);
-     }
+    if(html_file == NULL){
+        printf("Erro ao abrir o arquivo. 1\n");
+        exit(1);
+    }
 
     if(html_tree == NULL){
         printf("Erro ao abrir o arquivo. 2\n");
@@ -46,17 +46,17 @@ void spider(char *url, char *host) {
             }
             strcat(buf, "\r\n");
             if(strstr(buf, final_url) != NULL){
-                make_list(buf, head_href);
+                make_tree(buf, head_href);
                 printf("1-HREF = %s\n", buf);
-                getchar();
+                //getchar();
             }else if(buf[0] == '/' && buf[1]!='/'){ //pega hrefs que sejam do tipo "/...."
-                make_list(buf,head_href);
+                make_tree(buf, head_href);
                 printf("2-HREF = %s\n", buf);
-                getchar();
+                //getchar();
             }else if(buf[0] != 'h' && buf[0]!='#'){ //pega hrefs que sejam do tipo "files/...."
-                make_list(buf,head_href);
+                make_tree(buf, head_href);
                 printf("3-HREF = %s\n", buf);
-                getchar();
+                //getchar();
             }
             bzero(buf, BUFFER_SIZE);
             j = 0;
@@ -70,45 +70,55 @@ void spider(char *url, char *host) {
         //     strcat(buf, "\r\n");
         //}
     }
-    node *atual = head_href->prox, *proxNode;
-    while(atual != NULL){
-       proxNode = atual->prox;
-       free(atual);
-       atual = proxNode;
-    }
+    // arvore *atual = head_href->prox, *proxNode;
+    // while(atual != NULL){
+    //    proxNode = atual->prox;
+    //    free(atual);
+    //    atual = proxNode;
+    // }
     fclose(html_file);
     fclose(html_tree);
 }
 
-void make_list(char *href, struct Node *head_href){
-    node *temp = head_href;
-    long int flag = 1;
-    FILE *html_tree;
+int walk_tree(char *href, struct Arvore *head_href){ // checa a existencia do href na arvore
+    int i;
+    arvore *temp = head_href;
+    for (i=0; i<N; i++){
+        if(temp->filhos[i] != NULL){
+            if(strcmp(temp->filhos[i]->href, href) != 0){
+                walk_tree(href, temp->filhos[i]);
+            }
+            else
+                return TRUE;
+        }
 
-    while(temp->prox != NULL && flag == 1){
-        //printf("oi\n");
-        if(strcmp(temp->prox->href, href) != 0){
-            temp = temp->prox;
-        }
-        else{
-            flag = 0; // ja teve essa ocorrencia de href na lista
-        }
+
     }
-    if(flag == 1){ // nao tem essa ocorrencia de href na lista
-        node *novo_href = (node *)malloc(sizeof(node));
-        novo_href->prox = NULL;
+    return FALSE;
+}
+
+void make_tree(char *href, struct Arvore *head_href){
+    FILE *html_tree;
+    arvore *temp = head_href;
+    int i;
+    if(walk_tree(href, head_href) == FALSE){ // nao tem essa ocorrencia de href na arvore
+        arvore *novo_href = (arvore *)malloc(sizeof(arvore));
+        initialize_node(novo_href);
         strcpy(novo_href->href, href);
-        if(head_href->prox == NULL){
-            head_href->prox = novo_href;
-        }
-        else {
-            node *temp = head_href->prox;
-            while(temp->prox != NULL)
-                temp = temp->prox;
-            temp->prox = novo_href;
+        for(i=0;i<N;i++){
+            if(temp->filhos[i] == NULL){
+                temp->filhos[i] = novo_href;
+                i = N;
+            }
         }
         html_tree = fopen("html_tree.txt", "a");
         fputs(href, html_tree);
         fclose(html_tree);
     }
+}
+
+void initialize_node(struct Arvore *head_href){
+    int i;
+    for(i=0;i<N;i++)
+        head_href->filhos[i] = NULL;
 }

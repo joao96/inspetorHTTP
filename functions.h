@@ -11,19 +11,23 @@
 #include <sys/stat.h>
 
 extern int porta;
-
+#define N 20
 extern int BUFFER_SIZE;
+#define TRUE 1
+#define FALSE 0
 
 void spider(char *, char *);
 void parsing(char*, char*, char*);
 int get_host_by_name(char*, char*);
 void dump(char*, char*);
 
-
-struct Node{
+struct Arvore{
  char href[256];
- struct Node *prox;
+ struct Arvore *filhos[N];
 };
-typedef struct Node node;
+typedef struct Arvore arvore;
 
-void make_list(char*,struct Node*);
+void make_tree(char*, struct Arvore *);
+void initialize_node(struct Arvore *);
+
+int walk_tree(char*, struct Arvore *);

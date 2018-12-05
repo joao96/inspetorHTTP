@@ -43,8 +43,11 @@ int main( int argc, char *argv[] ){
         if(bind(actual_socket, (struct sockaddr*)&servidor, sizeof(servidor)) < 0) {
             perror("Erro Bind.\n");
         }
-        //do {
-            // ouve a porta
+
+        // ouve a porta
+        printf("Clique enter para comecar a escutar a porta\n");
+
+        getchar();
         if(listen(actual_socket, 1) == -1) {
             perror("Erro ao Escutar.\n");
         }
@@ -119,6 +122,7 @@ int main( int argc, char *argv[] ){
             printf("3 - SAIR.\n");
             printf("Digite a opcao: ");
             scanf("%d", &opcao);
+            getchar();
 
             switch (opcao) {
                 case 1:

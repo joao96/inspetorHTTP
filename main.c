@@ -23,6 +23,9 @@ int main( int argc, char *argv[] ){
     }
 
     do{
+        bzero(buf, BUFFER_SIZE);
+        bzero(new_url, 150);
+        bzero(new_host, 150);
         // cria o socket do servidor
         actual_socket = socket(AF_INET, SOCK_STREAM, 0);
         if(actual_socket < 0){

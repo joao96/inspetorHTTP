@@ -71,7 +71,6 @@ int main( int argc, char *argv[] ){
             printf("Arquivo de request nao foi aberto.\n");
             exit(1);
         }
-        printf("Request: %s.\n", buf);
         fputs(buf, request_file);
         fclose(request_file);
         system("nano request.txt");
@@ -88,6 +87,7 @@ int main( int argc, char *argv[] ){
         }
     }
 
+    printf("Request: %s.\n", buf);
     parsing(buf, new_url, new_host);
 
     // faz novo GET para o cliente
@@ -104,7 +104,7 @@ int main( int argc, char *argv[] ){
 
     while(read(sock, buf, BUFFER_SIZE - 1) != 0){
         fputs(buf, html_file);
-        // send(new_socket, buf, BUFFER_SIZE, 0);
+        send(new_socket, buf, BUFFER_SIZE, 0);
         bzero(buf, BUFFER_SIZE);
     }
 
@@ -154,24 +154,23 @@ int main( int argc, char *argv[] ){
     // } while(1);
 }
 
-void parsing(char* buf, char * new_url, char * new_host){
+void parsing(char* buf, char *new_url, char *new_host){
     char *get = strstr(buf, "GET");
     char *http = strstr(buf, "HTTP/1.1");
     char *host = strstr(buf, "Host:");
-    char *user_agent = strstr(buf, "User-Agent");
     long int i, j = 0;
+    char c = '\0';
     long int start_url = get - buf + 4;
     long int end_url = http - buf - 1;
     long int start_host = host - buf + 6;
-    long int end_host = user_agent - buf - 2;
 
     for(i=start_url;i<end_url;i++){
         new_url[j] = buf[i];
         j++;
     }
     j = 0;
-    for(i=start_host;i<end_host;i++) {
-        new_host[j] = buf[i];
+    while(buf[start_host + j]!= '\n' && buf[start_host + j] != '\r'){
+        new_host[j] = buf[start_host + j];
         j++;
     }
 }
@@ -183,7 +182,7 @@ int get_host_by_name(char *new_url, char *new_host){
     struct sockaddr_in cliente;
     bzero(request, 250);
     int on = 1, sock;
-    printf("NEW host: %s\n", new_host);
+    printf("NEW host:%s\n", new_host);
     if ((hp = gethostbyname(new_host)) == NULL){
         herror("gethostbyname");
     }

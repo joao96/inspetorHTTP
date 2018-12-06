@@ -76,9 +76,10 @@ int main(int argc, char *argv[] ){
         if((message_len = recv(new_socket, buf, BUFFER_SIZE, 0)) > 0) {  // recebe o request
             buf[message_len - 1] = '\0';
 
-            if(strstr(buf, "POST") != NULL) { // se o tipo do request for POST, encerra o programa
+            if(strstr(buf, "POST") != NULL) { // se o tipo do request for POST, fecha o socket e volta para o inicio
                 printf("Requisicao do tipo POST.\n");
-                exit(0);
+                close(new_socket);
+                break;
             }
 
             request_file = fopen("request.txt", "w");
@@ -127,10 +128,30 @@ int main(int argc, char *argv[] ){
             exit(2);
         }
 
+        long int timeout = 0, header_size, q = 0, file_size = 0;
+        char *content_length, *header, size_content[50];
         while(read(sock, buf, BUFFER_SIZE - 1) != 0){
+            if( (header = strstr(buf, "\r\n")) != NULL){
+                if( (content_length = strstr(buf, "Content-Length:")) != NULL){
+                    timeout = content_length - buf + 15;
+                    header_size = header - buf + 4;
+                    bzero(size_content, 50);
+                    while(buf[timeout+q] != '\r'){
+                        size_content[q] = buf[timeout+q];
+                        q++;
+                    }
+                    timeout = atoi(size_content);
+                    file_size = BUFFER_SIZE - header_size;
+                    timeout-=file_size;
+                }
+            }
+            timeout-=BUFFER_SIZE;
+            if(timeout == 0)
+                break;
             fputs(buf, html_file);
             bzero(buf, BUFFER_SIZE);
         }
+
         fclose(html_file);
         strcat(nano, "nano ");
         strcat(nano, dir);
@@ -158,8 +179,7 @@ int main(int argc, char *argv[] ){
                 case 1:
                     strcpy(head_href->href, new_url);
                     spider(new_url, new_host, aux_url, head_href);
-                    printf("%s\n", head_href->href);
-                    imprime_arvore(head_href, 1);
+                    imprime_arvore(head_href, 0);
                     break;
 
                 case 2:
@@ -252,29 +272,43 @@ int get_host_by_name(char *new_url, char *new_host){
 }
 
 void imprime_arvore(struct Arvore *node_href, int n_tab){
-    int i, j;
+    int i, j, control = 0;
     char buf[300];
     bzero(buf, 300);
-    FILE *fp = fopen("tree.txt", "a");
+    int flag = 0;
     if(node_href != NULL){
         for(i=0;i<N;i++){
-            for(j=1;j<=n_tab;j++){
+            FILE *fp = fopen("tree.txt", "a");
+            for(j = control;j < n_tab;j++){
                 printf("\t");
                 strcat(buf, "\t");
             }
-            if(node_href->filhos[i] != NULL){
-                printf("%s\n", node_href->filhos[i]->href);
-                strcat(buf, node_href->filhos[i]->href);
-                fputs(buf, fp);
+            if(node_href != NULL){
+                if(flag == 0){
+                    printf("%s\n", node_href->href);
+                    flag = 1;
+                    strcat(buf, node_href->href);
+                    strcat(buf, "\n");
+                    fprintf(fp, "%s", buf);
+                    fclose(fp);
+                }
                 bzero(buf, 300);
-                imprime_arvore(node_href->filhos[i], n_tab+1);
+                if(node_href->filhos[i] != NULL){
+                    imprime_arvore(node_href->filhos[i], n_tab+1);
+                    if(flag == 1)
+                        control = n_tab;
+                        j = control;
+                }
+                else{
+                    i = N;
+                    j = n_tab;
+                }
             }
             else{
                 i = N;
                 j = n_tab;
             }
         }
-        fclose(fp);
     }
 
 

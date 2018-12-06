@@ -1,22 +1,21 @@
 #include "functions.h"
 
-void spider(char *url, char *host, char *dir) {
-    printf("SPIDER ON\n");
+void spider(char *url, char *host, char *dir, struct Arvore *head_href) {
+    printf("SPIDER ON URL: %s\n", url);
+    printf("SPIDER ON DIR: %s\n", dir);
     FILE *html_tree, *html_file;
     char *href, buf[BUFFER_SIZE], c;
     char *needle;
-    char final_url[250], href_tree[150], href_dir[150];
+    char final_url[250] = "\0", href_tree[300] = "\0", href_dir[300] = "\0";
     size_t href_size = 256;
     long int i = 0, j=0;
     href = (char *)malloc(href_size * sizeof(char));
     bzero(href, 256);
     bzero(buf, BUFFER_SIZE);
-    arvore *head_href = (arvore *)malloc(sizeof(arvore));
     if(!head_href){
         printf("Sem memoria disponivel!\n");
         exit(0);
     }
-    initialize_node(head_href);
 
     strcpy(href_dir, dir);
     strcat(href_dir, "/index.txt");
@@ -26,12 +25,12 @@ void spider(char *url, char *host, char *dir) {
     html_tree = fopen(href_tree, "a");
 
     if(html_file == NULL){
-        printf("Erro ao abrir o arquivo. SPIDER\n");
+        printf("Erro ao abrir o arquivo. SPIDER HTML_FILE\n");
         exit(1);
     }
 
     if(html_tree == NULL){
-        printf("Erro ao abrir o arquivo. SPIDER\n");
+        printf("Erro ao abrir o arquivo. SPIDER HTML_TREE\n");
         exit(2);
     }
 
@@ -81,16 +80,19 @@ void spider(char *url, char *host, char *dir) {
 int walk_tree(char *href, struct Arvore *head_href){ // checa a existencia do href na arvore
     int i;
     arvore *temp = head_href;
-    for (i=0; i<N; i++){
-        if(temp->filhos[i] != NULL){
-            if(strcmp(temp->filhos[i]->href, href) != 0){
-                walk_tree(href, temp->filhos[i]);
+    if(strcmp(head_href->href, href) != 0){
+        for (i=0; i<N; i++){
+            if(temp->filhos[i] != NULL){
+                if(strcmp(temp->filhos[i]->href, href) != 0){
+                    walk_tree(href, temp->filhos[i]);
+                }
+                else
+                    return TRUE; // achou a referencia
             }
-            else
-                return TRUE;
         }
+        return FALSE; // nao achou a referencia
     }
-    return FALSE;
+    return TRUE; // achou a referencia
 }
 
 void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host, char*dir){
@@ -98,10 +100,13 @@ void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host,
     struct sockaddr_in cliente;
     int on = 1, sock, i;
     char buf[BUFFER_SIZE];
-    char request[500];
-    char new_dir[150];
+    char request[500] = "\0";
+    char new_dir[300] = "\0";
+    char system_call[200] = "\0";
+    char aux_dir[300] = "\0";
     FILE *html_tree;
     arvore *temp = head_href;
+
     if(walk_tree(href, head_href) == FALSE){ // nao tem essa ocorrencia de href na arvore
         arvore *novo_href = (arvore *)malloc(sizeof(arvore));
         initialize_node(novo_href);
@@ -119,37 +124,68 @@ void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host,
         }
         fputs(href, html_tree);
         fclose(html_tree);
-        if ((hp = gethostbyname(host)) == NULL){
-            herror("gethostbyname");
-        }
-        bcopy(hp->h_addr, &cliente.sin_addr, hp->h_length);
-        cliente.sin_port = htons(80);
-        cliente.sin_family = AF_INET;
-        sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&on, sizeof(int));
-        if (connect(sock, (struct sockaddr *)&cliente, sizeof(struct sockaddr_in)) == -1) {
-            perror("nao foi possivel conectar. SPIDER");
-            exit(4);
-        }
-        strcpy(request, "GET ");
-        strcat(request, href);
-        strcat(request, " HTTP/1.1\r\nHost: ");
-        strcat(request, host);
-        strcat(request, "\r\n\r\n");
-        write(sock, request, strlen(request));
-        strcpy(new_dir, "/");
-        strcat(new_dir, dir);
-        strcat(new_dir, "/");
-        strcat(new_dir, href);
-        mkdir(new_dir, S_IRUSR | S_IWUSR | S_IXUSR);
-        FILE *file = fopen(new_dir, "w");
-        if(file != NULL){
-            while(read(sock, buf, BUFFER_SIZE-1) != 0){
-                fwrite(buf, 1, sizeof(buf), file);
+
+        if((strstr(href, ".html") != NULL || strstr(href, ".") == NULL) && strlen(href) > 3){
+            i = 0;
+            size_t href_size = 256;
+            char *aux_href = (char *)malloc(href_size * sizeof(char));
+            bzero(aux_href, 256);
+            FILE *fp = fopen("temp.txt", "r");
+            if(fp){
+                while(getline(&aux_href, &href_size, fp) != -1) {
+                    if(strcmp(aux_href, href) == 0){
+                        return; // esse href ja existe, nao precisa ser consultado!
+                    }
+                }
+                fclose(fp);
             }
+            fp = fopen("temp.txt", "a"); // abre o arquivo para escrever no final o href novo encontrado
+            fputs(href, fp);
+            fclose(fp);
+            printf("HREF valido para download: %s\n", href);
+            if ((hp = gethostbyname(host)) == NULL){
+                herror("gethostbyname");
+            }
+            bcopy(hp->h_addr, &cliente.sin_addr, hp->h_length);
+            cliente.sin_port = htons(80);
+            cliente.sin_family = AF_INET;
+            sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+            setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&on, sizeof(int));
+            if (connect(sock, (struct sockaddr *)&cliente, sizeof(struct sockaddr_in)) == -1) {
+                perror("nao foi possivel conectar. SPIDER");
+                exit(4);
+            }
+            strcpy(request, "GET ");
+            strcat(request, href);
+            request[strlen(request)-2] = '\0';
+            strcat(request, " HTTP/1.1\r\nHost: ");
+            strcat(request, host);
+            strcat(request, "\r\n\r\n");
+            printf("%s", request);
+            write(sock, request, strlen(request));
+            //strcpy(new_dir, "/");
+            strcat(new_dir, dir);
+            //strcat(new_dir, "/");
+            strcat(new_dir, href);
+            new_dir[strlen(new_dir)-2] = '\0';
+            strcpy(system_call, "mkdir -p ");
+            strcat(system_call, new_dir);
+            strcpy(aux_dir, new_dir);
+            //strcat(aux_dir, "/");
+            strcat(new_dir, "/index.txt");
+
+            system(system_call);
+            FILE *file = fopen(new_dir, "w");
+            if(file != NULL){
+                while(read(sock, buf, BUFFER_SIZE-1) != 0){
+                    fwrite(buf, 1, sizeof(buf), file);
+                }
+            }
+            fclose(file);
+            nivel++;
+            if(nivel <= MAX_NIVEL)
+                spider(href, host, aux_dir, novo_href);
         }
-        fclose(file);
-        spider(href, host, new_dir);
     }
 }
 

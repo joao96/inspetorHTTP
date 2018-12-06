@@ -2,6 +2,7 @@
 
 int BUFFER_SIZE = 4096; // tamanho do buffer
 int porta = 8228;
+int nivel = 0;
 
 int main(int argc, char *argv[] ){
 
@@ -15,7 +16,12 @@ int main(int argc, char *argv[] ){
     char new_url[150] = "\0", new_host[150] = "\0", aux_url[150] = "\0";
     int c, i, opcao = 0;
     unsigned int cliente_lenght = sizeof(cliente);
+    arvore *head_href = (arvore *)malloc(sizeof(arvore));
+    initialize_node(head_href);
+    char *href_list[HREF_LIST_SIZE];
+    bzero(href_list, 4096);
     int tr=1;
+    i=0;
 
     if(argv[1]){ // tratamento para o argumento do número da porta
         if(strcmp(argv[1], "-p") == 0)
@@ -150,7 +156,10 @@ int main(int argc, char *argv[] ){
 
             switch (opcao) {
                 case 1:
-                    spider(new_url, new_host, aux_url);
+                    strcpy(head_href->href, new_url);
+                    spider(new_url, new_host, aux_url, head_href);
+                    printf("%s\n", head_href->href);
+                    imprime_arvore(head_href, 1);
                     break;
 
                 case 2:
@@ -159,7 +168,7 @@ int main(int argc, char *argv[] ){
                         fseek (html_tree, 0, SEEK_END);
                         if (ftell(html_tree) == 0) {
 
-                        printf("Arquivo vazio!\n");
+                            printf("Arquivo vazio!\n");
                         }else{
                             dump(new_url, new_host);
                         }
@@ -189,7 +198,6 @@ void parsing(char* buf, char *new_url, char *new_host){
     char *http = strstr(buf, "HTTP/1.1");
     char *host = strstr(buf, "Host:");
     long int i, j = 0;
-    char c = '\0';
     long int start_url = get - buf + 4;
     long int end_url = http - buf - 1;
     long int start_host = host - buf + 6;
@@ -241,4 +249,33 @@ int get_host_by_name(char *new_url, char *new_host){
     write(sock, request, strlen(request));
 
     return sock;
+}
+
+void imprime_arvore(struct Arvore *node_href, int n_tab){
+    int i, j;
+    char buf[300];
+    bzero(buf, 300);
+    FILE *fp = fopen("tree.txt", "a");
+    if(node_href != NULL){
+        for(i=0;i<N;i++){
+            for(j=1;j<=n_tab;j++){
+                printf("\t");
+                strcat(buf, "\t");
+            }
+            if(node_href->filhos[i] != NULL){
+                printf("%s\n", node_href->filhos[i]->href);
+                strcat(buf, node_href->filhos[i]->href);
+                fputs(buf, fp);
+                bzero(buf, 300);
+                imprime_arvore(node_href->filhos[i], n_tab+1);
+            }
+            else{
+                i = N;
+                j = n_tab;
+            }
+        }
+        fclose(fp);
+    }
+
+
 }

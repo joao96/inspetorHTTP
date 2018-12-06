@@ -16,8 +16,6 @@ int main(int argc, char *argv[] ){
     char new_url[150] = "\0", new_host[150] = "\0", aux_url[150] = "\0";
     int c, i, opcao = 0;
     unsigned int cliente_lenght = sizeof(cliente);
-    arvore *head_href = (arvore *)malloc(sizeof(arvore));
-    initialize_node(head_href);
     char *href_list[HREF_LIST_SIZE];
     bzero(href_list, 4096);
     int tr=1;
@@ -30,6 +28,8 @@ int main(int argc, char *argv[] ){
     }
 
     do{
+        arvore *head_href = (arvore *)malloc(sizeof(arvore));
+        initialize_node(head_href);
         bzero(buf, BUFFER_SIZE);
         bzero(new_url, 150);
         bzero(new_host, 150);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[] ){
             switch (opcao) {
                 case 1:
                     strcpy(head_href->href, new_url);
-                    spider(new_url, new_host, aux_url, head_href);
+                    spider(new_url, new_host, aux_url, head_href, aux_url);
                     imprime_arvore(head_href, 0);
                     break;
 
@@ -205,6 +205,17 @@ int main(int argc, char *argv[] ){
 
         }while(opcao == 1 || opcao == 2 || opcao == 3);
 
+        FILE *fp = fopen("tree.txt", "r");
+        int contador_href = 0;
+        size_t href_size = 256;
+        char *aux_href = (char *)malloc(href_size * sizeof(char));
+        while(getline(&aux_href, &href_size, fp) != -1) {
+                contador_href++;
+        }
+        zera_arvore(head_href, contador_href - 2);
+        fclose(fp);
+        remove("tree.txt");
+        remove("tree_tab.txt");
         fclose(html_file);
         close(new_socket); // fecha o socket do cliente
 
@@ -273,12 +284,14 @@ int get_host_by_name(char *new_url, char *new_host){
 
 void imprime_arvore(struct Arvore *node_href, int n_tab){
     int i, j, control = 0;
-    char buf[300];
-    bzero(buf, 300);
+    char buf[500], buf_tab[500];
+    bzero(buf, 500);
+    bzero(buf_tab, 500);
     int flag = 0;
     if(node_href != NULL){
         for(i=0;i<N;i++){
             FILE *fp = fopen("tree.txt", "a");
+            FILE *fp_notab = fopen("tree_tab.txt", "a");
             for(j = control;j < n_tab;j++){
                 printf("\t");
                 strcat(buf, "\t");
@@ -288,9 +301,14 @@ void imprime_arvore(struct Arvore *node_href, int n_tab){
                     printf("%s\n", node_href->href);
                     flag = 1;
                     strcat(buf, node_href->href);
-                    strcat(buf, "\n");
-                    fprintf(fp, "%s", buf);
+                    strcat(buf_tab, node_href->href);
+                    if(strstr(buf, "\r\n") == NULL)
+                        strcat(buf, "\r\n");
+                    //strcat(buf, "\n");
+                    fprintf(fp,"%s", buf);
+                    fprintf(fp_notab,"%s", buf_tab);
                     fclose(fp);
+                    fclose(fp_notab);
                 }
                 bzero(buf, 300);
                 if(node_href->filhos[i] != NULL){
@@ -312,4 +330,22 @@ void imprime_arvore(struct Arvore *node_href, int n_tab){
     }
 
 
+}
+
+void zera_arvore(struct Arvore *head_href, int contador_href){ // checa a existencia do href na arvore
+    int i, contador = 0;
+    arvore *temp = head_href;
+    while (strcmp(temp->href, "\0") != 0) {
+        for(i=0;i<N;i++){
+            if(temp->filhos[i] == NULL)
+                contador++;
+            else{
+                zera_arvore(temp->filhos[i], contador_href);
+                contador++;
+            }
+        }
+        if(contador == contador_href || contador == N)
+            bzero(temp->href, 256);
+
+    }
 }

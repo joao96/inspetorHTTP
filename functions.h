@@ -30,8 +30,9 @@ struct Arvore{
 };
 typedef struct Arvore arvore;
 
-void make_tree(char*, struct Arvore *, char *, char *, char *);
+void make_tree(char*, struct Arvore *, char *, char *, char *, char *);
 void initialize_node(struct Arvore *);
 int walk_tree(char*, struct Arvore *);
-void spider(char *, char *, char *, struct Arvore *);
+void spider(char *, char *, char *, struct Arvore *, char *);
 void imprime_arvore(struct Arvore *, int);
+void zera_arvore(struct Arvore *, int);

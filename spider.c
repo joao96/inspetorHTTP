@@ -1,6 +1,6 @@
 #include "functions.h"
 
-void spider(char *url, char *host, char *dir, struct Arvore *head_href) {
+void spider(char *url, char *host, char *dir, struct Arvore *head_href, char *root_dir) {
     printf("SPIDER ON URL: %s\n", url);
     printf("SPIDER ON DIR: %s\n", dir);
     FILE *html_tree, *html_file;
@@ -49,11 +49,11 @@ void spider(char *url, char *host, char *dir, struct Arvore *head_href) {
             }
             strcat(buf, "\r\n");
             if(strstr(buf, final_url) != NULL){
-                make_tree(buf, head_href, href_tree, host, dir);
-            }else if(buf[0] == '/' && buf[1]!='/'){ //pega hrefs que sejam do tipo "/...."
-                make_tree(buf, head_href, href_tree, host, dir);
-            }else if(buf[0] != 'h' && buf[0]!='#'){ //pega hrefs que sejam do tipo "files/...."
-                make_tree(buf, head_href, href_tree, host, dir);
+                make_tree(buf, head_href, href_tree, host, dir, root_dir);
+            }else if(buf[0] == '/' && buf[1]!='/' ){ //pega hrefs que sejam do tipo "/...."
+                make_tree(buf, head_href, href_tree, host, dir, root_dir);
+            }else if(buf[0] != 'h' && buf[0]!='#' && (strstr(buf, "@")==NULL)){ //pega hrefs que sejam do tipo "files/...."
+                make_tree(buf, head_href, href_tree, host, dir, root_dir);
             }
             bzero(buf, BUFFER_SIZE);
             j = 0;
@@ -95,7 +95,7 @@ int walk_tree(char *href, struct Arvore *head_href){ // checa a existencia do hr
     return TRUE; // achou a referencia
 }
 
-void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host, char*dir){
+void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host, char*dir, char *root_dir){
     struct hostent *hp;
     struct sockaddr_in cliente;
     int on = 1, sock, i;
@@ -130,7 +130,10 @@ void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host,
             size_t href_size = 256;
             char *aux_href = (char *)malloc(href_size * sizeof(char));
             bzero(aux_href, 256);
-            FILE *fp = fopen("temp.txt", "r");
+            char temp_dir[300] = "\0";
+            strcat(temp_dir, root_dir);
+            strcat(temp_dir, "\temp.txt");
+            FILE *fp = fopen(temp_dir, "r");
             if(fp){
                 while(getline(&aux_href, &href_size, fp) != -1) {
                     if(strcmp(aux_href, href) == 0){
@@ -139,7 +142,7 @@ void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host,
                 }
                 fclose(fp);
             }
-            fp = fopen("temp.txt", "a"); // abre o arquivo para escrever no final o href novo encontrado
+            fp = fopen(temp_dir, "a"); // abre o arquivo para escrever no final o href novo encontrado
             fputs(href, fp);
             fclose(fp);
             printf("HREF valido para download: %s\n", href);
@@ -184,7 +187,7 @@ void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host,
             fclose(file);
             nivel++;
             if(nivel <= MAX_NIVEL)
-                spider(href, host, aux_dir, novo_href);
+                spider(href, host, aux_dir, novo_href, root_dir);
         }
     }
 }

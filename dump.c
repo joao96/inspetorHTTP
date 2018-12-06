@@ -6,19 +6,20 @@ void dump(char *url, char *host) {
     struct sockaddr_in cliente;
     int on = 1, sock;
     long int i, j = 0, k = 0;
-    char l;
     char buf[BUFFER_SIZE], aux_buf[BUFFER_SIZE];
-    char dir[150];
-    char reverse_dir[150];
+    char dir[500];
+    char reverse_dir[500];
     char href[256], c;
     char request[500];
     char *needle;
-    bzero(dir, 150);
-    bzero(reverse_dir, 150);
+    bzero(dir, 500);
+    bzero(href, 256);
+    bzero(request, 500);
+    bzero(reverse_dir, 500);
     dir[0] = '\0';
     reverse_dir[0] = '\0';
 
-    html_tree = fopen("html_tree.txt", "r");
+    html_tree = fopen("tree_tab.txt", "r");
 
     if(html_tree == NULL){
         printf("Erro ao abrir o arquivo. 3\n");
@@ -26,7 +27,9 @@ void dump(char *url, char *host) {
     }
 
     while (fgets(href, sizeof(href), html_tree)) {
-        j = 0, k = 0, i = 0;
+        j = 0;
+        k = 0;
+        i = 0;
         if ((hp = gethostbyname(host)) == NULL){
             herror("gethostbyname");
         }
@@ -74,14 +77,23 @@ void dump(char *url, char *host) {
         }
 
 
-        i = strlen(url) - 1;
+        i = strlen(href) - 1;
         k = 0;
-        while(href[i] != '\0'){
-            href[k] = href[i];
-            k++;
-            i++;
+        int p = 0;
+        char new_href[256];
+        bzero(new_href, 256);
+        char *pos;
+
+        href[i-1] = '\0';
+        if((pos = strstr(href, "\t"))){
+            long int position = pos - href + 1;
+            for (k = position; k <= i; k++) {
+                new_href[p] = href[k];
+                p++;
+            }
+            strcpy(href, new_href);
         }
-        href[k-2] = '\0';
+
         strcat(request, "GET ");
         strcat(request, href);
         strcat(request, " HTTP/1.1\r\nHost: ");
@@ -90,12 +102,18 @@ void dump(char *url, char *host) {
         printf("%s\n", request);
         write(sock, request, strlen(request));
         memset(buf, 0x0, BUFFER_SIZE); //limpa o buffer antigo
+        if(strcmp(reverse_dir, "") == 0)
+            strcpy(reverse_dir, "#");
         if(strlen(dir) != 0){
             strcat(dir, "/");
             strcat(dir, reverse_dir);
         }else{
             strcpy(dir, reverse_dir);
+            if((strstr(dir, "/") == NULL) || strstr(dir, ".") == NULL){
+                strcat(dir, ".txt");
+            }
         }
+
         FILE *file = fopen(dir, "w");
         if(file != NULL){
             j = 0;

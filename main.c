@@ -206,16 +206,18 @@ int main(int argc, char *argv[] ){
         }while(opcao == 1 || opcao == 2 || opcao == 3);
 
         FILE *fp = fopen("tree.txt", "r");
-        int contador_href = 0;
-        size_t href_size = 256;
-        char *aux_href = (char *)malloc(href_size * sizeof(char));
-        while(getline(&aux_href, &href_size, fp) != -1) {
-                contador_href++;
+        if(fp != NULL) {
+            int contador_href = 0;
+            size_t href_size = 256;
+            char *aux_href = (char *)malloc(href_size * sizeof(char));
+            while(getline(&aux_href, &href_size, fp) != -1) {
+                    contador_href++;
+            }
+            fclose(fp);
+            zera_arvore(head_href, contador_href - 2);
+            remove("tree.txt");
+            remove("tree_tab.txt");
         }
-        zera_arvore(head_href, contador_href - 2);
-        fclose(fp);
-        remove("tree.txt");
-        remove("tree_tab.txt");
         fclose(html_file);
         close(new_socket); // fecha o socket do cliente
 

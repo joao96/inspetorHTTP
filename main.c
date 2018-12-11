@@ -33,8 +33,7 @@ int main(int argc, char *argv[] ){
         bzero(buf, BUFFER_SIZE);
         bzero(new_url, 150);
         bzero(new_host, 150);
-        // cria o socket do servidor
-        actual_socket = socket(AF_INET, SOCK_STREAM, 0);
+        actual_socket = socket(AF_INET, SOCK_STREAM, 0); // cria o socket do servidor
         if(actual_socket < 0){
             perror("Nao foi possivel criar o socket do servidor.\n");
         }
@@ -90,7 +89,7 @@ int main(int argc, char *argv[] ){
             }
             fputs(buf, request_file);
             fclose(request_file);
-            system("nano request.txt");
+            system("nano request.txt"); // abre a opção para o usuário editar o request recebido
             request_file = fopen("request.txt", "r");
 
             i = 0;
@@ -105,7 +104,7 @@ int main(int argc, char *argv[] ){
         }
 
         printf("Request: %s.\n", buf);
-        parsing(buf, new_url, new_host);
+        parsing(buf, new_url, new_host); // realiza o parsing para retirar informações úteis do request
 
         // faz novo GET para o cliente
         int sock = get_host_by_name(new_url, new_host);
@@ -118,6 +117,7 @@ int main(int argc, char *argv[] ){
             if(aux_url[i] == '/' || aux_url[i] == ':')
                 aux_url[i] = '-';
         }
+
         strcpy(dir, aux_url);
         strcat(dir, "/index.txt");
         mkdir(aux_url, S_IRUSR | S_IWUSR | S_IXUSR);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[] ){
         system(nano);
         html_file = fopen(dir, "r");
         bzero(buf, BUFFER_SIZE);
-        while(fread(buf, 1, BUFFER_SIZE, html_file) == BUFFER_SIZE){
+        while(fread(buf, 1, BUFFER_SIZE, html_file) == BUFFER_SIZE){ // envia de volta para o browser a página html
             send(new_socket, buf, BUFFER_SIZE, 0);
         }
 
@@ -224,6 +224,7 @@ int main(int argc, char *argv[] ){
     return 0;
 }
 
+// irá retirar o url e o host do request
 void parsing(char* buf, char *new_url, char *new_host){
     char *get = strstr(buf, "GET");
     char *http = strstr(buf, "HTTP/1.1");
@@ -243,7 +244,7 @@ void parsing(char* buf, char *new_url, char *new_host){
         j++;
     }
 }
-
+// usará o IP do host e criará um novo request HTTP
 int get_host_by_name(char *new_url, char *new_host){
 
     struct hostent *hp;
@@ -282,6 +283,7 @@ int get_host_by_name(char *new_url, char *new_host){
     return sock;
 }
 
+// percorre a estrura de dados de árvore para imprimir a árvore hipertextual de hrefs da página
 void imprime_arvore(struct Arvore *node_href, int n_tab){
     int i, j, control = 0;
     char buf[500], buf_tab[500];
@@ -332,7 +334,8 @@ void imprime_arvore(struct Arvore *node_href, int n_tab){
 
 }
 
-void zera_arvore(struct Arvore *head_href, int contador_href){ // checa a existencia do href na arvore
+// uma vez fechada a conexão com esse cliente, apaga-se o conteúdo da árvore hipertextual
+void zera_arvore(struct Arvore *head_href, int contador_href){
     int i, contador = 0;
     arvore *temp = head_href;
     while (strcmp(temp->href, "\0") != 0) {

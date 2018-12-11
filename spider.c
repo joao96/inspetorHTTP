@@ -57,22 +57,9 @@ void spider(char *url, char *host, char *dir, struct Arvore *head_href, char *ro
             }
             bzero(buf, BUFFER_SIZE);
             j = 0;
-        }//else if((needle = strstr(href, "src=")) != NULL){
-        //     i = needle - href + 5;
-        //     while((c = href[i])!= '"'){
-        //         buf[j] = c;
-        //         i++;
-        //         j++;
-        //     }
-        //     strcat(buf, "\r\n");
-        //}
+        }
     }
-    // arvore *atual = head_href->prox, *proxNode;
-    // while(atual != NULL){
-    //    proxNode = atual->prox;
-    //    free(atual);
-    //    atual = proxNode;
-    // }
+
     fclose(html_file);
     fclose(html_tree);
 }
@@ -166,15 +153,12 @@ void make_tree(char *href, struct Arvore *head_href, char *href_tree, char*host,
             strcat(request, "\r\n\r\n");
             printf("%s", request);
             write(sock, request, strlen(request));
-            //strcpy(new_dir, "/");
             strcat(new_dir, dir);
-            //strcat(new_dir, "/");
             strcat(new_dir, href);
             new_dir[strlen(new_dir)-2] = '\0';
             strcpy(system_call, "mkdir -p ");
             strcat(system_call, new_dir);
             strcpy(aux_dir, new_dir);
-            //strcat(aux_dir, "/");
             strcat(new_dir, "/index.txt");
 
             system(system_call);
